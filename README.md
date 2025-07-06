@@ -50,11 +50,11 @@ FundiBot is an intelligent Telegram bot that connects clients with skilled freel
 - **Telegram Bot API**: Messaging platform integration
 
 ### **Workflow Components**
-\`\`\`
+```
 Telegram → User Extraction → Database Check → AI Processing → Response Generation
-    ↓           ↓              ↓              ↓              ↓
+    ↓           ↓                ↓               ↓              ↓
   Messages → User Data → User Management → Smart Replies → Telegram
-\`\`\`
+```
 
 ### **Database Schema**
 - **Users**: Profile management and authentication
@@ -74,18 +74,18 @@ Telegram → User Extraction → Database Check → AI Processing → Response G
 ### **Installation**
 
 1. **Clone the Repository**
-   \`\`\`bash
+   ```bash
    git clone https://github.com/Kaballah/Vibe-Code-2.0.git
-   cd fundibot
-   \`\`\`
+   cd Vibe-Code-2.0
+   ```
 
 2. **Set Up Database**
-   \`\`\`bash
+   ```bash
    # Run the SQL scripts in order
    psql -f scripts/01-create-database-schema.sql
    psql -f scripts/02-seed-service-categories.sql
    psql -f scripts/04-insert-dummy-freelancer-data.sql
-   \`\`\`
+   ```
 
 3. **Configure n8n Workflow**
    - Import `fixed-telegram-bot-workflow-corrected-data-access.json`
@@ -93,38 +93,38 @@ Telegram → User Extraction → Database Check → AI Processing → Response G
    - Activate the workflow
 
 4. **Test the Bot**
-   \`\`\`
+   ```
    Send "Hello" to your Telegram bot
    Try "I need a web developer"
    Test "I want to post a job"
-   \`\`\`
+   ```
 
 ## 📱 Usage Examples
 
 ### **Finding a Freelancer**
-\`\`\`
+```
 User: "I need someone to clean my house"
 Bot: "I found 3 verified cleaners near you:
      🧹 John Mwangi - 4.8⭐ (5 years experience)
      📍 Nairobi | 💰 KSh 2,000/day
      Would you like to contact John or see more options?"
-\`\`\`
+```
 
 ### **Posting a Job**
-\`\`\`
+```
 User: "I want to hire a web developer"
 Bot: "Great! I'll help you post a web development job.
      📝 Job created successfully!
      What's your project about? (e.g., e-commerce site, portfolio)"
-\`\`\`
+```
 
 ### **Becoming a Freelancer**
-\`\`\`
+```
 User: "I want to offer tutoring services"
 Bot: "Excellent! Let's set up your freelancer profile.
      📚 What subjects do you teach?
      🎓 How many years of experience do you have?"
-\`\`\`
+```
 
 ## 👥 Development Team
 
@@ -149,15 +149,15 @@ Bot: "Excellent! Let's set up your freelancer profile.
 ## 🔧 Configuration
 
 ### **Environment Variables**
-\`\`\`env
+```env
 TELEGRAM_BOT_TOKEN=your_telegram_token
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_key
 GOOGLE_GEMINI_API_KEY=your_gemini_key
-\`\`\`
+```
 
 ### **Database Configuration**
-\`\`\`sql
+```sql
 -- Required tables
 - users
 - freelancer_profiles  
@@ -165,17 +165,7 @@ GOOGLE_GEMINI_API_KEY=your_gemini_key
 - service_categories
 - message_logs
 - freelancer_services
-\`\`\`
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```
 
 ## 📄 License
 
