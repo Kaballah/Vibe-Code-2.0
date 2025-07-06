@@ -1,0 +1,1844 @@
+{
+  "name": "Conversational Telegram Bot with GPT-4o for Text and Voice Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "51edced8-6923-4705-a5ac-e14fc8e4262f",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -2000,
+        -40
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "62283210-46a6-472a-a113-a8400f0ab233",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "id": "b180239c-3168-4a27-a5a8-e2cddc7b249e",
+      "name": "Show Typing Indicator",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -1780,
+        -140
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "f4b5a827-7b2e-46ef-a445-32ae17ee7c4f",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extract-chat-id",
+              "name": "chat_id",
+              "type": "number",
+              "value": "={{ $json.message.chat.id }}"
+            },
+            {
+              "id": "extract-username",
+              "name": "telegram_username",
+              "type": "string",
+              "value": "={{ $json.message.chat.username || '' }}"
+            },
+            {
+              "id": "extract-first-name",
+              "name": "first_name",
+              "type": "string",
+              "value": "={{ $json.message.chat.first_name || 'User' }}"
+            },
+            {
+              "id": "extract-last-name",
+              "name": "last_name",
+              "type": "string",
+              "value": "={{ $json.message.chat.last_name || '' }}"
+            },
+            {
+              "id": "extract-message-text",
+              "name": "message_text",
+              "type": "string",
+              "value": "={{ $json.message.text || '' }}"
+            },
+            {
+              "id": "extract-message-type",
+              "name": "message_type",
+              "type": "string",
+              "value": "={{ $json.message.voice ? 'voice' : 'text' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4328dad7-2152-40dd-95c8-66d8ba5121f3",
+      "name": "Extract User Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1780,
+        60
+      ],
+      "typeVersion": 3.4,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1560,
+        60
+      ],
+      "id": "5f9972e9-4a3c-40e0-9a7b-0822a864bee4",
+      "name": "Check User Exists",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "user-exists-condition",
+                    "operator": {
+                      "type": "object",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $('Check User Exists').item }}",
+                    "rightValue": 0
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "User Exists"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5f766f7e-9098-476a-b33a-249dcb9fc6e4",
+                    "leftValue": "={{ $('Check User Exists').item }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Create User"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "62021905-ebd8-4a3d-9818-334754a71e67",
+      "name": "User Exists Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -1340,
+        60
+      ],
+      "typeVersion": 3.2,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "tableId": "users",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telegram_chat_id",
+              "fieldValue": "={{ $('Extract User Data').item.json.chat_id }}"
+            },
+            {
+              "fieldId": "telegram_username",
+              "fieldValue": "={{ $('Extract User Data').item.json.telegram_username }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $('Extract User Data').item.json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $('Extract User Data').item.json.last_name }}"
+            },
+            {
+              "fieldId": "user_type",
+              "fieldValue": "client"
+            },
+            {
+              "fieldId": "profile_completed",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "verification_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -20
+      ],
+      "id": "3482c6b2-659f-451a-ae1b-d97e6d079cfa",
+      "name": "Create New User",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract User Data').item.json.chat_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telegram_username",
+              "fieldValue": "={{ $('Extract User Data').item.json.telegram_username }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $('Extract User Data').item.json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $('Extract User Data').item.json.last_name }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        140
+      ],
+      "id": "c5b4483d-e60a-4b8b-8c2d-21c9fe0100ec",
+      "name": "Update Existing User",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract User Data').item.json.chat_id }}",
+        "text": "⏳ Setting up your profile...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "aeeb7f5b-8f66-47ab-bc79-cb5aee0094c1",
+      "name": "Send Loading Message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -900,
+        60
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "a10a0d60-e9e3-470c-b1a2-37d03c8b6d65",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "keyValue": "={{ $('Extract User Data').item.json.chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        60
+      ],
+      "id": "9e0a2a8c-5739-40ab-87de-5480f502c260",
+      "name": "Get Final User Data",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Get Final User Data').item.json['telegram_chat_id'] }}",
+        "contextWindowLength": 20
+      },
+      "id": "0a397aaa-7daa-4c98-bead-0a42e3c39305",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        -480,
+        300
+      ],
+      "typeVersion": 1.3,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "maxOutputTokens": 1500,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        300
+      ],
+      "id": "b9d3fa1c-3177-4a0c-ac59-a1d9d66c4a1e",
+      "name": "Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "P9ZSE4dlhaf3aVwk",
+          "name": "GeminiApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are FundiBot 🤖, an intelligent assistant for a freelancer booking platform in Kenya that connects clients with local service providers.\n\n**Current User Context:**\n- User ID: {{ $('Get Final User Data').item.json[0].id }}\n- Chat ID: {{ $('Get Final User Data').item.json[0].telegram_chat_id }}\n- Name: {{ $('Get Final User Data').item.json[0].first_name }} {{ $('Get Final User Data').item.json[0].last_name || '' }}\n- Username: @{{ $('Get Final User Data').item.json[0].telegram_username || 'N/A' }}\n- Message: \"{{ $('Extract User Data').item.json.message_text }}\"\n- Message Type: {{ $('Extract User Data').item.json.message_type }}\n\n**IMPORTANT - You have access to these database tools:**\n1. **Search Available Freelancers** - Use this to find verified freelancers when users need services\n2. **Get Service Categories** - Use this to show available service types\n3. **Create Job Request** - Use this when clients want to post jobs\n4. **Create Freelancer Profile** - Use this when users want to become freelancers\n5. **Search Freelancers by Service** - Use this to find freelancers for specific services\n6. **Update User Profile** - Use this to update user information\n\n**ALWAYS use these tools when:**\n- User asks for any service (search freelancers first)\n- User wants to see available services (get categories)\n- User wants to post a job (create job request)\n- User wants to become a freelancer (create profile)\n- User asks about specific freelancers or services\n\n**Welcome Message for New Users:**\nHi {{ $('Get Final User Data').item.json[0].first_name }}! 👋 Welcome to FundiBot!\n\nI'm here to help you connect with skilled freelancers in Kenya. Whether you need:\n🧹 Home services (cleaning, plumbing, electrical)\n💻 Tech services (web development, design)\n📚 Education (tutoring, training)\n🎨 Creative services (photography, writing)\n...and much more!\n\n**How I can help:**\n✅ Find trusted freelancers near you\n✅ Post detailed job requests\n✅ Manage bookings and payments\n✅ Handle reviews and ratings\n\n**Getting Started:**\nAre you looking to:\n1️⃣ **Hire a freelancer** (I'll help you find the perfect match)\n2️⃣ **Offer your services** (I'll help you create a freelancer profile)\n\nJust tell me what you need! 🚀\n\n**Response Guidelines:**\n1. **ALWAYS search database first** when users need services\n2. **Use real freelancer data** from the database\n3. **Ask clarifying questions** for location, budget, timeline\n4. **Show actual freelancer profiles** with ratings and experience\n5. **Use emojis** to make conversations friendly\n6. **Be specific** with real data from database\n\nAlways end with a clear question or call-to-action!",
+        "options": {
+          "systemMessage": "You are FundiBot, a helpful assistant for a freelancer platform. You MUST use the database tools to provide real freelancer information. Always search the database when users need services. Never give generic responses - use actual data from the database tools."
+        }
+      },
+      "id": "1a7f6ccf-1563-4036-84b7-4cfef4c45a13",
+      "name": "FundiBot AI Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -460,
+        60
+      ],
+      "typeVersion": 1.9,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get Final User Data').item.json['telegram_chat_id'] }}",
+        "text": "={{ $('FundiBot AI Assistant').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "ebbf9d39-6442-4f43-8b50-ddf96e6cc963",
+      "name": "Send Bot Response",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -100,
+        60
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "172730b5-4a64-4960-9666-f4f477232cc2",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "tableId": "message_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Get Final User Data').item.json[0].id }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $('Extract User Data').item.json.message_type }}"
+            },
+            {
+              "fieldId": "user_message",
+              "fieldValue": "={{ $('Extract User Data').item.json.message_text }}"
+            },
+            {
+              "fieldId": "bot_response",
+              "fieldValue": "={{ $('FundiBot AI Assistant').item.json.output }}"
+            },
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $('Get Final User Data').item.json[0].telegram_chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        100,
+        60
+      ],
+      "id": "86ef62b2-9935-4899-b522-28aee9cd9e21",
+      "name": "Log Message",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "freelancer_profiles",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "availability_status",
+              "condition": "eq",
+              "keyValue": "available"
+            },
+            {
+              "keyName": "is_verified",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        400
+      ],
+      "id": "8edb117a-af37-437a-84d6-ebed81c44b5b",
+      "name": "Search Available Freelancers",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "service_categories",
+        "limit": 20,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        400
+      ],
+      "id": "eeed37e9-ec20-4266-9bfc-c8c65deba396",
+      "name": "Get Service Categories",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "tableId": "job_requests",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $('Get Final User Data').item.json['id'] }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "New Job Request"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "Job details to be filled by client"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "draft"
+            },
+            {
+              "fieldId": "budget_type",
+              "fieldValue": "negotiable"
+            },
+            {
+              "fieldId": "urgency",
+              "fieldValue": "medium"
+            },
+            {
+              "fieldId": "job_type",
+              "fieldValue": "one_time"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        400
+      ],
+      "id": "a45163a9-b12c-4590-89ef-b82fd33de4cf",
+      "name": "Create Job Request",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "tableId": "freelancer_profiles",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Get Final User Data').item.json['id'] }}"
+            },
+            {
+              "fieldId": "bio",
+              "fieldValue": "Professional freelancer ready to serve clients"
+            },
+            {
+              "fieldId": "availability_status",
+              "fieldValue": "available"
+            },
+            {
+              "fieldId": "experience_years",
+              "fieldValue": "1"
+            },
+            {
+              "fieldId": "is_verified",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "32b73bd0-c83c-430d-b396-2017fce9be7a",
+      "name": "Create Freelancer Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "freelancer_services",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        120,
+        400
+      ],
+      "id": "41c23916-cfc9-4512-b432-64ac7d405bd6",
+      "name": "Search Freelancers by Service",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get Final User Data').item.json['id'] }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "profile_completed",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        240,
+        400
+      ],
+      "id": "43ec9173-c9a4-44f9-97e5-53a98d242117",
+      "name": "Update User Profile",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "ce39895b-0004-4a00-b71f-9e87550496b2",
+      "name": "Telegram Trigger1",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "position": [
+        -1900,
+        -800
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "62283210-46a6-472a-a113-a8400f0ab233",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "id": "7edad170-30d8-4bb5-a5f4-71b700cdcf34",
+      "name": "Show Typing Indicator1",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -1680,
+        -900
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "f4b5a827-7b2e-46ef-a445-32ae17ee7c4f",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "extract-chat-id",
+              "name": "chat_id",
+              "type": "number",
+              "value": "={{ $json.message.chat.id }}"
+            },
+            {
+              "id": "extract-username",
+              "name": "telegram_username",
+              "type": "string",
+              "value": "={{ $json.message.chat.username || '' }}"
+            },
+            {
+              "id": "extract-first-name",
+              "name": "first_name",
+              "type": "string",
+              "value": "={{ $json.message.chat.first_name || 'User' }}"
+            },
+            {
+              "id": "extract-last-name",
+              "name": "last_name",
+              "type": "string",
+              "value": "={{ $json.message.chat.last_name || '' }}"
+            },
+            {
+              "id": "extract-message-text",
+              "name": "message_text",
+              "type": "string",
+              "value": "={{ $json.message.text || '' }}"
+            },
+            {
+              "id": "extract-message-type",
+              "name": "message_type",
+              "type": "string",
+              "value": "={{ $json.message.voice ? 'voice' : 'text' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "41f7fdea-f5c2-41b7-b6b4-c43139005c56",
+      "name": "Extract User Data1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1680,
+        -680
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1460,
+        -680
+      ],
+      "id": "d9646e01-58c9-497e-8785-e8b3ac5eb6c3",
+      "name": "Check User Exists1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "user-exists-condition",
+                    "operator": {
+                      "type": "object",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "leftValue": "={{ $json }}",
+                    "rightValue": 0
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "User Exists"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "dd4e2fb6-c2d5-4722-9e7f-8b5d774454ad",
+      "name": "User Exists Switch1",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -1240,
+        -680
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "tableId": "users",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telegram_chat_id",
+              "fieldValue": "={{ $('Extract User Data1').item.json.chat_id }}"
+            },
+            {
+              "fieldId": "telegram_username",
+              "fieldValue": "={{ $('Extract User Data1').item.json.telegram_username }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $('Extract User Data1').item.json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $('Extract User Data1').item.json.last_name }}"
+            },
+            {
+              "fieldId": "user_type",
+              "fieldValue": "client"
+            },
+            {
+              "fieldId": "profile_completed",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "verification_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1020,
+        -760
+      ],
+      "id": "8a608a44-3ebc-4cc9-b9b0-7597d86d0785",
+      "name": "Create New User1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract User Data1').item.json.chat_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "telegram_username",
+              "fieldValue": "={{ $('Extract User Data1').item.json.telegram_username }}"
+            },
+            {
+              "fieldId": "first_name",
+              "fieldValue": "={{ $('Extract User Data1').item.json.first_name }}"
+            },
+            {
+              "fieldId": "last_name",
+              "fieldValue": "={{ $('Extract User Data1').item.json.last_name }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1020,
+        -600
+      ],
+      "id": "10cf0ce4-a0b6-4573-841d-89617e471138",
+      "name": "Update Existing User1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Extract User Data1').item.json.chat_id }}",
+        "text": "⏳ Setting up your profile...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "be99670e-ca12-4cdd-b2d7-18179a9cca23",
+      "name": "Send Loading Message1",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        -800,
+        -680
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "a10a0d60-e9e3-470c-b1a2-37d03c8b6d65",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "users",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "telegram_chat_id",
+              "keyValue": "={{ $('Extract User Data1').item.json.chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -580,
+        -680
+      ],
+      "id": "09d5c189-24d3-4f87-9bbd-d688f9d2ab20",
+      "name": "Get Final User Data1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Get Final User Data1').item.json.telegram_chat_id }}",
+        "contextWindowLength": 20
+      },
+      "id": "4d269073-3010-4d60-b712-7d9a482f5995",
+      "name": "Conversation Memory1",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        -380,
+        -440
+      ],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {
+          "maxOutputTokens": 1500,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        -440
+      ],
+      "id": "506e4f14-ec3e-4222-8e41-1b281c0d1c33",
+      "name": "Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "P9ZSE4dlhaf3aVwk",
+          "name": "GeminiApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are FundiBot 🤖, an intelligent assistant for a freelancer booking platform in Kenya that connects clients with local service providers.\n\n**Current User Context:**\n- User ID: {{ $('Get Final User Data1').item.json.id }}\n- Chat ID: {{ $('Get Final User Data1').item.json.telegram_chat_id }}\n- Name: {{ $('Get Final User Data1').item.json.first_name }} {{ $('Get Final User Data1').item.json.last_name || '' }}\n- Username: @{{ $('Get Final User Data1').item.json.telegram_username || 'N/A' }}\n- Message: \"{{ $('Extract User Data1').item.json.message_text }}\"\n- Message Type: {{ $('Extract User Data1').item.json.message_type }}\n\n**IMPORTANT - You have access to these database tools:**\n1. **Search Available Freelancers** - Use this to find verified freelancers when users need services\n2. **Get Service Categories** - Use this to show available service types\n3. **Create Job Request** - Use this when clients want to post jobs\n4. **Create Freelancer Profile** - Use this when users want to become freelancers\n5. **Search Freelancers by Service** - Use this to find freelancers for specific services\n6. **Update User Profile** - Use this to update user information\n\n**ALWAYS use these tools when:**\n- User asks for any service (search freelancers first)\n- User wants to see available services (get categories)\n- User wants to post a job (create job request)\n- User wants to become a freelancer (create profile)\n- User asks about specific freelancers or services\n\n**Welcome Message for New Users:**\nHi {{ $('Get Final User Data1').item.json.first_name }}! 👋 Welcome to FundiBot!\n\nI'm here to help you connect with skilled freelancers in Kenya. Whether you need:\n🧹 Home services (cleaning, plumbing, electrical)\n💻 Tech services (web development, design)\n📚 Education (tutoring, training)\n🎨 Creative services (photography, writing)\n...and much more!\n\n**How I can help:**\n✅ Find trusted freelancers near you\n✅ Post detailed job requests\n✅ Manage bookings and payments\n✅ Handle reviews and ratings\n\n**Getting Started:**\nAre you looking to:\n1️⃣ **Hire a freelancer** (I'll help you find the perfect match)\n2️⃣ **Offer your services** (I'll help you create a freelancer profile)\n\nJust tell me what you need! 🚀\n\n**Response Guidelines:**\n1. **ALWAYS search database first** when users need services\n2. **Use real freelancer data** from the database\n3. **Ask clarifying questions** for location, budget, timeline\n4. **Show actual freelancer profiles** with ratings and experience\n5. **Use emojis** to make conversations friendly\n6. **Be specific** with real data from database\n\nAlways end with a clear question or call-to-action!",
+        "options": {
+          "systemMessage": "You are FundiBot, a helpful assistant for a freelancer platform. You MUST use the database tools to provide real freelancer information. Always search the database when users need services. Never give generic responses - use actual data from the database tools."
+        }
+      },
+      "id": "a1024e72-2fd3-42c7-b8a9-bd0446f1b869",
+      "name": "FundiBot AI Assistant1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        -360,
+        -680
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Get Final User Data1').item.json.telegram_chat_id }}",
+        "text": "={{ $('FundiBot AI Assistant1').item.json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "38111c3d-13f2-4025-827e-ec42871d5666",
+      "name": "Send Bot Response1",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        0,
+        -680
+      ],
+      "typeVersion": 1.2,
+      "webhookId": "172730b5-4a64-4960-9666-f4f477232cc2",
+      "credentials": {
+        "telegramApi": {
+          "id": "2zLzAmICP7wqkqUQ",
+          "name": "TelegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "message_logs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Get Final User Data1').item.json.id }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $('Extract User Data1').item.json.message_type }}"
+            },
+            {
+              "fieldId": "user_message",
+              "fieldValue": "={{ $('Extract User Data1').item.json.message_text }}"
+            },
+            {
+              "fieldId": "bot_response",
+              "fieldValue": "={{ $('FundiBot AI Assistant1').item.json.output }}"
+            },
+            {
+              "fieldId": "session_id",
+              "fieldValue": "={{ $('Get Final User Data1').item.json.telegram_chat_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        200,
+        -680
+      ],
+      "id": "064b942b-8d27-4e96-b2ec-db11ee32f0f0",
+      "name": "Log Message1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "freelancer_profiles",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "availability_status",
+              "condition": "eq",
+              "keyValue": "available"
+            },
+            {
+              "keyName": "is_verified",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -340
+      ],
+      "id": "c2600f80-39e0-4aed-88e2-4e2c90dc8a4b",
+      "name": "Search Available Freelancers1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "service_categories",
+        "limit": 20,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -340
+      ],
+      "id": "9fa6cd48-caa2-4768-8436-dc615856ce14",
+      "name": "Get Service Categories1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "job_requests",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "client_id",
+              "fieldValue": "={{ $('Get Final User Data1').item.json.id }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "New Job Request"
+            },
+            {
+              "fieldId": "description",
+              "fieldValue": "Job details to be filled by client"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "draft"
+            },
+            {
+              "fieldId": "budget_type",
+              "fieldValue": "negotiable"
+            },
+            {
+              "fieldId": "urgency",
+              "fieldValue": "medium"
+            },
+            {
+              "fieldId": "job_type",
+              "fieldValue": "one_time"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -340
+      ],
+      "id": "774466a0-030b-44f5-b4a1-4296a6e0d471",
+      "name": "Create Job Request1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "freelancer_profiles",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Get Final User Data1').item.json.id }}"
+            },
+            {
+              "fieldId": "bio",
+              "fieldValue": "Professional freelancer ready to serve clients"
+            },
+            {
+              "fieldId": "availability_status",
+              "fieldValue": "available"
+            },
+            {
+              "fieldId": "experience_years",
+              "fieldValue": "1"
+            },
+            {
+              "fieldId": "is_verified",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        100,
+        -340
+      ],
+      "id": "7e549eae-cd6c-40f0-afac-5990249cb091",
+      "name": "Create Freelancer Profile1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "freelancer_services",
+        "limit": 10,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "is_active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -340
+      ],
+      "id": "e1c56307-5207-4a7e-9ea7-0987cb8f76b2",
+      "name": "Search Freelancers by Service1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "users",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get Final User Data1').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "profile_completed",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $now }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        340,
+        -340
+      ],
+      "id": "53ef2c2e-a27a-433b-8496-9df6a7bd9058",
+      "name": "Update User Profile1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "hkCexvibT0KeLToB",
+          "name": "SupabaseCredentials"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Show Typing Indicator",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract User Data": {
+      "main": [
+        [
+          {
+            "node": "Check User Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User Exists": {
+      "main": [
+        [
+          {
+            "node": "User Exists Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Exists Switch": {
+      "main": [
+        [
+          {
+            "node": "Update Existing User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create New User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New User": {
+      "main": [
+        [
+          {
+            "node": "Send Loading Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Existing User": {
+      "main": [
+        [
+          {
+            "node": "Send Loading Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Loading Message": {
+      "main": [
+        [
+          {
+            "node": "Get Final User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Final User Data": {
+      "main": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FundiBot AI Assistant": {
+      "main": [
+        [
+          {
+            "node": "Send Bot Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bot Response": {
+      "main": [
+        [
+          {
+            "node": "Log Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Available Freelancers": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Service Categories": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Job Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Freelancer Profile": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Freelancers by Service": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update User Profile": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Show Typing Indicator1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract User Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract User Data1": {
+      "main": [
+        [
+          {
+            "node": "Check User Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check User Exists1": {
+      "main": [
+        [
+          {
+            "node": "User Exists Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Exists Switch1": {
+      "main": [
+        [
+          {
+            "node": "Update Existing User1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New User1": {
+      "main": [
+        [
+          {
+            "node": "Send Loading Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Existing User1": {
+      "main": [
+        [
+          {
+            "node": "Send Loading Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Loading Message1": {
+      "main": [
+        [
+          {
+            "node": "Get Final User Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Final User Data1": {
+      "main": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FundiBot AI Assistant1": {
+      "main": [
+        [
+          {
+            "node": "Send Bot Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Bot Response1": {
+      "main": [
+        [
+          {
+            "node": "Log Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Available Freelancers1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Service Categories1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Job Request1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Freelancer Profile1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Freelancers by Service1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update User Profile1": {
+      "ai_tool": [
+        [
+          {
+            "node": "FundiBot AI Assistant1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fa5c899b-bc32-4347-bebe-be4f3c5af1d8",
+  "meta": {
+    "templateId": "4696",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6012fc69cb8c8e4476971da60ca708d11299961c8c9066616490c437d9e51571"
+  },
+  "id": "9yryZEkcmEE6zyl9",
+  "tags": []
+}
